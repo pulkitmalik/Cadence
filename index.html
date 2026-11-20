@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadence — Personal & Shared Habit &amp; Goal Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .ring-progress { transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 antialiased">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <!-- Brand -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <div class="w-9 h-9 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="font-bold text-base tracking-tight">Cadence</span>
+          <span class="hidden sm:inline-block ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Habits &amp; Goals</span>
+        </div>
+      </div>
+
+      <!-- Profile Switcher & Compare Pill -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
+          <i data-lucide="users" class="w-4 h-4 text-slate-500 dark:text-slate-400 ml-2 shrink-0"></i>
+          <select id="profileSelect" aria-label="Active Profile" class="bg-transparent text-xs sm:text-sm font-medium pr-2 py-1 focus:outline-none cursor-pointer text-slate-800 dark:text-slate-100"></select>
+          <button id="editProfileBtn" title="Rename or manage profiles" class="p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors">
+            <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <button id="compareToggleBtn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium border transition-all shrink-0">
+          <i data-lucide="columns-2" class="w-4 h-4"></i>
+          <span>View Both</span>
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button id="importBtn" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors">
+          <i data-lucide="upload" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+          <span class="hidden md:inline">Import</span>
+        </button>
+        <div class="relative">
+          <button id="exportMenuBtn" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+            <span class="hidden md:inline">Export</span>
+          </button>
+          <div id="exportDropdown" class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg py-1.5 z-40">
+            <button id="exportJsonBtn" class="w-full text-left px-3.5 py-2 text-xs sm:text-sm hover:bg-slate-50 dark:hover:bg-slate-700/60 flex items-center gap-2">
+              <i data-lucide="file-json" class="w-4 h-4 text-emerald-500"></i>
+              <span>Export Backup (.json)</span>
+            </button>
+            <button id="exportCsvBtn" class="w-full text-left px-3.5 py-2 text-xs sm:text-sm hover:bg-slate-50 dark:hover:bg-slate-700/60 flex items-center gap-2">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-indigo-500"></i>
+              <span>Export Sheet (.csv)</span>
+            </button>
+          </div>
+        </div>
+        <button id="remindersBtn" title="Reminders &amp; Sound Chimes" aria-label="Reminders and Sound" class="relative p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors">
+          <i data-lucide="bell" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
+          <span id="reminderActiveDot" class="hidden absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        </button>
+        <button id="themeToggleBtn" aria-label="Toggle dark mode" class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors">
+          <i id="themeIconSun" data-lucide="sun" class="w-4 h-4 text-amber-500 hidden dark:block"></i>
+          <i id="themeIconMoon" data-lucide="moon" class="w-4 h-4 text-slate-600 block dark:hidden"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Imported Profile Banner (shown when viewing someone else's profile) -->
+    <div id="importedBanner" class="hidden rounded-2xl border border-indigo-200 dark:border-indigo-800/70 bg-indigo-50/70 dark:bg-indigo-950/40 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5 text-sm">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white">
+          <i data-lucide="user-check" class="w-4 h-4"></i>
+        </span>
+        <div>
+          <span class="font-semibold text-indigo-950 dark:text-indigo-100" id="importedBannerName">Viewing Imported Profile</span>
+          <span class="text-indigo-700 dark:text-indigo-300 ml-1.5 text-xs sm:text-sm">Your own profile data is safely preserved.</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="bannerCompareBtn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">Compare With Mine</button>
+        <button id="bannerBackToMeBtn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors">Back to My Habits</button>
+      </div>
+    </div>
+
+    <!-- SIDE-BY-SIDE COMPARE VIEW (Hidden unless "View Both" is active) -->
+    <section id="compareView" class="hidden space-y-6">
+      <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-lg font-bold tracking-tight flex items-center gap-2">
+              <i data-lucide="columns-2" class="w-5 h-5 text-indigo-500"></i>
+              Side-by-Side Comparison
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Viewing both profiles together without overwriting either person's history.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="compareLeftSelect" class="text-xs sm:text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5"></select>
+            <span class="text-xs font-semibold text-slate-400">vs</span>
+            <select id="compareRightSelect" class="text-xs sm:text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5"></select>
+            <input type="date" id="compareDateInput" class="text-xs sm:text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5" />
+          </div>
+        </div>
+
+        <!-- Side-by-side summary cards -->
+        <div id="compareCardsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+      </div>
+
+      <!-- Combined Trend Chart -->
+      <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-base font-semibold">14-Day Completion Comparison (%)</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Daily habit completion percentage for both profiles</p>
+          </div>
+        </div>
+        <div class="relative h-72">
+          <canvas id="compareTrendChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- STANDARD SINGLE-PROFILE DASHBOARD -->
+    <div id="singleProfileView" class="space-y-6">
+
+      <!-- Top Summary Row: Completion Ring + KPI Cards + Quick Actions -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Daily Completion Ring Card -->
+        <div class="lg:col-span-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex items-center gap-5">
+          <div class="relative w-28 h-28 shrink-0 flex items-center justify-center">
+            <svg class="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" stroke-width="9" fill="none" class="stroke-slate-100 dark:stroke-slate-800" />
+              <circle id="ringProgressCircle" cx="50" cy="50" r="42" stroke-width="9" fill="none" stroke-linecap="round"
+                class="stroke-emerald-500 ring-progress" stroke-dasharray="263.89" stroke-dashoffset="263.89" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="ringPercentText" class="text-2xl font-bold tracking-tight">0%</span>
+              <span class="text-[11px] font-medium text-slate-400">Done</span>
+            </div>
+          </div>
+          <div class="min-w-0 flex-1 space-y-1.5">
+            <div class="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400" id="selectedDateBadge">Today</div>
+            <h1 class="text-lg font-bold truncate" id="profileTitleHeading">My Habits</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+              <span id="completedCountText" class="font-semibold text-slate-800 dark:text-slate-200">0</span> of
+              <span id="totalActiveText" class="font-semibold text-slate-800 dark:text-slate-200">0</span> habits completed
+            </p>
+            <div class="pt-1 flex flex-wrap gap-2">
+              <button id="addHabitBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Add Habit</span>
+              </button>
+              <button id="manageArchivedBtn" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">
+                <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+                <span>Archived (<span id="archivedCountBadge">0</span>)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Stats Cards -->
+        <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-medium">Top Streak</span>
+              <i data-lucide="flame" class="w-4 h-4 text-amber-500"></i>
+            </div>
+            <div class="mt-3">
+              <div id="kpiTopStreak" class="text-2xl font-bold">0d</div>
+              <div id="kpiTopStreakLabel" class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">No streak yet</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-medium">7-Day Avg</span>
+              <i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i>
+            </div>
+            <div class="mt-3">
+              <div id="kpiWeeklyAvg" class="text-2xl font-bold">0%</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Completion rate</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-medium">Perfect Days</span>
+              <i data-lucide="award" class="w-4 h-4 text-indigo-500"></i>
+            </div>
+            <div class="mt-3">
+              <div id="kpiPerfectDays" class="text-2xl font-bold">0</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Last 30 days</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-medium">Logged Days</span>
+              <i data-lucide="calendar-check" class="w-4 h-4 text-sky-500"></i>
+            </div>
+            <div class="mt-3">
+              <div id="kpiLoggedDays" class="text-2xl font-bold">0</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Total active days</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Workspace Grid: Daily Check-In (Left) + Calendar & Notes (Right) -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left: Daily Habit Check-In List -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            <!-- Date Bar & Category Filter -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div class="flex items-center gap-1.5">
+                <button id="prevDayBtn" title="Previous Day" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+                <input type="date" id="activeDateInput" class="text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <button id="nextDayBtn" title="Next Day" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+                <button id="todayBtn" class="ml-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Today</button>
+                <button id="restDayToggleBtn" title="Mark as Rest / Streak Freeze Day" class="ml-1 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors">
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                  <span class="hidden sm:inline">Rest Day</span>
+                </button>
+              </div>
+
+              <!-- Category Filter Pills -->
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full" id="categoryFilterBar"></div>
+            </div>
+
+            <!-- Habits List -->
+            <div id="habitListContainer" class="space-y-3"></div>
+          </div>
+
+          <!-- Daily Notes Card -->
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-2.5">
+              <label for="dailyNoteInput" class="text-sm font-semibold flex items-center gap-2">
+                <i data-lucide="notebook-pen" class="w-4 h-4 text-emerald-500"></i>
+                <span>Daily Note</span>
+                <span id="noteDateLabel" class="text-xs font-normal text-slate-400"></span>
+              </label>
+              <span id="noteSavedStatus" class="text-xs text-emerald-600 dark:text-emerald-400 opacity-0 transition-opacity">Saved</span>
+            </div>
+            <textarea id="dailyNoteInput" rows="3" placeholder="How did today go? Energy levels, meals, study focus, or reflections..."
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"></textarea>
+          </div>
+        </div>
+
+        <!-- Right: Weekly / Monthly Calendar Grid -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2 class="text-base font-bold flex items-center gap-2">
+                <i data-lucide="calendar-days" class="w-4 h-4 text-indigo-500"></i>
+                <span>Calendar &amp; Consistency</span>
+              </h2>
+              <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-medium">
+                <button id="calModeWeekBtn" class="px-2.5 py-1 rounded-lg transition-colors">Weekly</button>
+                <button id="calModeMonthBtn" class="px-2.5 py-1 rounded-lg transition-colors">Monthly</button>
+              </div>
+            </div>
+
+            <!-- Calendar Navigation -->
+            <div class="flex items-center justify-between mb-3">
+              <button id="calPrevBtn" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <span id="calPeriodLabel" class="text-sm font-semibold"></span>
+              <button id="calNextBtn" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Calendar Content -->
+            <div id="calendarGridContainer"></div>
+
+            <!-- Legend -->
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Click any day to view or log</span>
+              <div class="flex items-center gap-1.5">
+                <span>Less</span>
+                <span class="w-3 h-3 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></span>
+                <span class="w-3 h-3 rounded bg-emerald-200 dark:bg-emerald-900/70"></span>
+                <span class="w-3 h-3 rounded bg-emerald-400 dark:bg-emerald-700"></span>
+                <span class="w-3 h-3 rounded bg-emerald-600 dark:bg-emerald-500"></span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Review Card -->
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3.5">
+            <div class="flex items-center justify-between">
+              <h2 class="text-base font-bold flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                <span>Weekly Review</span>
+              </h2>
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Last 7 Days</span>
+            </div>
+            <div id="weeklyReviewContent" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Weekly & Monthly Goals Section -->
+      <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-bold flex items-center gap-2">
+              <i data-lucide="target" class="w-4 h-4 text-indigo-500"></i>
+              <span>Weekly &amp; Monthly Goals</span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Set bigger milestones (subjects, weight, reading, fitness) and increment your progress daily</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-medium">
+              <button id="goalFilterAllBtn" class="px-2.5 py-1 rounded-lg transition-colors">All</button>
+              <button id="goalFilterWeeklyBtn" class="px-2.5 py-1 rounded-lg transition-colors">Weekly</button>
+              <button id="goalFilterMonthlyBtn" class="px-2.5 py-1 rounded-lg transition-colors">Monthly</button>
+            </div>
+            <button id="addGoalBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Goal</span>
+            </button>
+          </div>
+        </div>
+        <div id="goalsGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- Bottom Section: Trend Charts -->
+      <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-bold flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-500"></i>
+              <span>Progress &amp; Habit Trends</span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Track your overall completion rate or compare numeric targets like sleep, study, and exercise</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-medium">
+              <button id="chartTypeCompletionBtn" class="px-2.5 py-1 rounded-lg transition-colors">Completion %</button>
+              <button id="chartTypeNumericBtn" class="px-2.5 py-1 rounded-lg transition-colors">Numeric Habits</button>
+            </div>
+            <select id="chartRangeSelect" class="text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5">
+              <option value="7">Last 7 days</option>
+              <option value="14" selected>Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="numericHabitSelectorRow" class="hidden flex-wrap gap-1.5 mb-3"></div>
+
+        <div class="relative h-72">
+          <canvas id="trendChartCanvas"></canvas>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODAL: Add / Edit Habit -->
+  <div id="habitModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="habitModalTitle" class="text-base font-bold">Add Custom Habit</h3>
+        <button id="closeHabitModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="habitForm" class="space-y-3.5">
+        <input type="hidden" id="habitIdInput" />
+        <div>
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Habit Name</label>
+          <input type="text" id="habitNameInput" required placeholder="e.g. Deep Work, Evening Walk, Protein Goal"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Category</label>
+            <select id="habitCategoryInput" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm">
+              <option value="Daily Routine">Daily Routine</option>
+              <option value="Sleep">Sleep</option>
+              <option value="Study">Study</option>
+              <option value="Exercise">Exercise</option>
+              <option value="Food">Food</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Tracking Type</label>
+            <select id="habitTypeInput" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm">
+              <option value="boolean">Checkbox (Done / Not Done)</option>
+              <option value="number">Numeric Target (Hours, Mins, etc.)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="numericFieldsGroup" class="hidden grid-cols-3 gap-2.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Daily Target</label>
+            <input type="number" id="habitTargetInput" min="0.1" step="any" value="1"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Step</label>
+            <input type="number" id="habitStepInput" min="0.1" step="any" value="1"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Unit</label>
+            <input type="text" id="habitUnitInput" placeholder="hrs, mins" value="hrs"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="cancelHabitModalBtn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">Save Habit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add / Edit Goal -->
+  <div id="goalModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="goalModalTitle" class="text-base font-bold">Add Weekly / Monthly Goal</h3>
+        <button id="closeGoalModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="goalForm" class="space-y-3.5">
+        <input type="hidden" id="goalIdInput" />
+        <div>
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Goal Title</label>
+          <input type="text" id="goalTitleInput" required placeholder="e.g. Complete Calculus Chapters, Weight Goal, Read 300 Pages"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Timeframe</label>
+            <select id="goalPeriodInput" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm">
+              <option value="weekly">Weekly Goal</option>
+              <option value="monthly">Monthly Goal</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Category</label>
+            <select id="goalCategoryInput" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm">
+              <option value="Study">Study</option>
+              <option value="Exercise">Exercise</option>
+              <option value="Food">Food</option>
+              <option value="Daily Routine">Daily Routine</option>
+              <option value="Sleep">Sleep</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Current</label>
+            <input type="number" id="goalCurrentInput" min="0" step="any" value="0"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Target</label>
+            <input type="number" id="goalTargetInput" min="0.1" step="any" value="10"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Daily Step</label>
+            <input type="number" id="goalStepInput" min="0.1" step="any" value="1"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Unit</label>
+            <input type="text" id="goalUnitInput" placeholder="chapters, kg" value="chapters"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="cancelGoalModalBtn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Archived Habits -->
+  <div id="archivedModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold">Archived Habits</h3>
+        <button id="closeArchivedModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="archivedListContainer" class="space-y-2 max-h-72 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Import File (Non-Destructive Multi-Profile) -->
+  <div id="importModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold flex items-center gap-2">
+          <i data-lucide="upload" class="w-4 h-4 text-indigo-500"></i>
+          <span>Open / Import Backup File</span>
+        </h3>
+        <button id="closeImportModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        Opening someone else's <span class="font-medium text-slate-700 dark:text-slate-200">.json</span> or <span class="font-medium text-slate-700 dark:text-slate-200">.csv</span> file adds it as a <strong class="text-slate-700 dark:text-slate-200">separate profile</strong> so your own habits and history are never removed.
+      </p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Label for this profile (optional)</label>
+          <input type="text" id="importProfileNameInput" placeholder="e.g. Alex, Partner, My Old Backup"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-sm" />
+        </div>
+        <label class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
+          <i data-lucide="file-up" class="w-7 h-7 text-indigo-500"></i>
+          <span class="text-xs sm:text-sm font-medium">Choose a .json or .csv file</span>
+          <input type="file" id="importFileInput" accept=".json,.csv" class="hidden" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Manage Profiles -->
+  <div id="profilesModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold">Manage Profiles</h3>
+        <button id="closeProfilesModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="profilesListContainer" class="space-y-2.5 max-h-72 overflow-y-auto"></div>
+      <form id="addLocalProfileForm" class="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+        <input type="text" id="newLocalProfileName" placeholder="Create another local profile..." class="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs sm:text-sm" />
+        <button type="submit" class="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">Add</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Built-in Focus Timer -->
+  <div id="focusTimerModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-xl text-center space-y-5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Focus Timer</span>
+        <button id="closeTimerModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div>
+        <h3 id="timerHabitName" class="text-base font-bold truncate">Habit</h3>
+        <p id="timerHabitHint" class="text-xs text-slate-400 mt-0.5">Elapsed time will auto-log when finished</p>
+      </div>
+      <div class="text-5xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white" id="timerDisplay">25:00</div>
+      <div class="flex items-center justify-center gap-1.5">
+        <button data-timer-preset="15" class="timer-preset-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">15m</button>
+        <button data-timer-preset="25" class="timer-preset-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">25m</button>
+        <button data-timer-preset="45" class="timer-preset-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">45m</button>
+        <button data-timer-preset="60" class="timer-preset-btn px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">60m</button>
+      </div>
+      <div class="flex items-center justify-center gap-2 pt-1">
+        <button id="timerStartPauseBtn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors">Start</button>
+        <button id="timerResetBtn" class="px-3.5 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">Reset</button>
+        <button id="timerFinishLogBtn" class="px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">Finish &amp; Log</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Reminders & Sound Chimes -->
+  <div id="remindersModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold flex items-center gap-2">
+          <i data-lucide="bell" class="w-4 h-4 text-emerald-500"></i>
+          <span>Reminders &amp; Sound Chimes</span>
+        </h3>
+        <button id="closeRemindersModalBtn" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div>
+            <div class="text-sm font-semibold">Completion Sound Chime</div>
+            <div class="text-xs text-slate-400">Play a gentle chime at 100% daily completion &amp; timer end</div>
+          </div>
+          <input type="checkbox" id="soundEnabledCheckbox" class="w-4 h-4 accent-emerald-600 cursor-pointer" />
+        </div>
+        <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold">Daily Check-in Reminder</div>
+              <div class="text-xs text-slate-400">Remind me while this tab is open</div>
+            </div>
+            <input type="checkbox" id="reminderEnabledCheckbox" class="w-4 h-4 accent-emerald-600 cursor-pointer" />
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <label for="reminderTimeInput" class="text-xs font-medium text-slate-600 dark:text-slate-300">Reminder Time</label>
+            <input type="time" id="reminderTimeInput" value="20:00" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-sm" />
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <button id="testChimeBtn" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">Test Chime</button>
+          <button id="saveRemindersBtn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs sm:text-sm font-medium shadow-lg">
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    // ---------- UTILITIES ----------
+    const STORAGE_KEY = 'habitflow_multi_v1';
+    const CATEGORY_COLORS = {
+      'Daily Routine': { badge: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300', hex: '#0ea5e9' },
+      'Sleep': { badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300', hex: '#6366f1' },
+      'Study': { badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300', hex: '#8b5cf6' },
+      'Exercise': { badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', hex: '#10b981' },
+      'Food': { badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300', hex: '#f59e0b' },
+      'Other': { badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300', hex: '#64748b' }
+    };
+
+    function toDateStr(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseDateStr(str) {
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function addDays(str, delta) {
+      const d = parseDateStr(str);
+      d.setDate(d.getDate() + delta);
+      return toDateStr(d);
+    }
+
+    function todayStr() {
+      return toDateStr(new Date());
+    }
+
+    function formatDisplayDate(str) {
+      const t = todayStr();
+      if (str === t) return 'Today';
+      if (str === addDays(t, -1)) return 'Yesterday';
+      if (str === addDays(t, 1)) return 'Tomorrow';
+      return parseDateStr(str).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function uid(prefix = 'id') {
+      return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }, 2800);
+    }
+
+    function defaultHabits() {
+      return [
+        { id: 'h_routine_1', name: 'Morning Hydration & Stretch', category: 'Daily Routine', type: 'boolean', target: 1, step: 1, unit: '', archived: false },
+        { id: 'h_routine_2', name: 'Screen-Free Wind Down', category: 'Daily Routine', type: 'boolean', target: 1, step: 1, unit: '', archived: false },
+        { id: 'h_sleep_1', name: 'Sleep Duration', category: 'Sleep', type: 'number', target: 8, step: 0.5, unit: 'hrs', archived: false },
+        { id: 'h_study_1', name: 'Focused Study', category: 'Study', type: 'number', target: 2, step: 0.5, unit: 'hrs', archived: false },
+        { id: 'h_exercise_1', name: 'Exercise / Movement', category: 'Exercise', type: 'number', target: 30, step: 5, unit: 'mins', archived: false },
+        { id: 'h_food_1', name: 'Balanced Whole Meals', category: 'Food', type: 'number', target: 3, step: 1, unit: 'meals', archived: false }
+      ];
+    }
+
+    // ---------- STATE ----------
+    let appState = {
+      theme: 'light',
+      activeProfileId: 'me',
+      compareMode: false,
+      compareLeftId: 'me',
+      compareRightId: null,
+      selectedDate: todayStr(),
+      categoryFilter: 'All',
+      calendarMode: 'week', // 'week' | 'month'
+      calendarAnchor: todayStr(),
+      chartMode: 'completion', // 'completion' | 'numeric'
+      chartRange: 14,
+      goalFilter: 'all',
+      soundEnabled: true,
+      reminderEnabled: false,
+      reminderTime: '20:00',
+      lastRemindedDate: null,
+      selectedNumericHabitIds: [],
+      profiles: [
+        {
+          id: 'me',
+          name: 'My Habits',
+          isOwner: true,
+          importedAt: null,
+          habits: defaultHabits(),
+          goals: [],
+          logs: {}
+        }
+      ]
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.profiles) && parsed.profiles.length > 0) {
+            appState = {
+              ...appState,
+              ...parsed,
+              selectedDate: todayStr(),
+              calendarAnchor: todayStr(),
+              compareMode: false
+            };
+            appState.profiles.forEach(p => { if (!Array.isArray(p.goals)) p.goals = []; });
+            if (!appState.profiles.find(p => p.id === appState.activeProfileId)) {
+              appState.activeProfileId = appState.profiles[0].id;
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback to default in-memory state
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          theme: appState.theme,
+          activeProfileId: appState.activeProfileId,
+          profiles: appState.profiles,
+          calendarMode: appState.calendarMode,
+          chartMode: appState.chartMode,
+          chartRange: appState.chartRange,
+          soundEnabled: appState.soundEnabled,
+          reminderEnabled: appState.reminderEnabled,
+          reminderTime: appState.reminderTime
+        }));
+      } catch (e) {
+        // Ignore storage quota errors
+      }
+    }
+
+    function getActiveProfile() {
+      return appState.profiles.find(p => p.id === appState.activeProfileId) || appState.profiles[0];
+    }
+
+    function isHabitCompleted(habit, val) {
+      if (habit.type === 'boolean') return Boolean(val);
+      return Number(val || 0) >= Number(habit.target || 1);
+    }
+
+    function getDayStats(profile, dateStr) {
+      const activeHabits = profile.habits.filter(h => !h.archived);
+      const dayLog = profile.logs[dateStr] || { values: {}, note: '' };
+      const values = dayLog.values || {};
+      let completed = 0;
+      activeHabits.forEach(h => {
+        if (isHabitCompleted(h, values[h.id])) completed++;
+      });
+      const total = activeHabits.length;
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { completed, total, pct, restDay: Boolean(dayLog.restDay), note: dayLog.note || '', values };
+    }
+
+    function getHabitStreak(profile, habit) {
+      const today = todayStr();
+      let streak = 0;
+      let cursor = today;
+      const todayLog = profile.logs[today]?.values?.[habit.id];
+      if (!isHabitCompleted(habit, todayLog) && !profile.logs[today]?.restDay) {
+        cursor = addDays(today, -1);
+      }
+      for (let i = 0; i < 365; i++) {
+        const dayEntry = profile.logs[cursor];
+        const val = dayEntry?.values?.[habit.id];
+        if (isHabitCompleted(habit, val)) {
+          streak++;
+          cursor = addDays(cursor, -1);
+        } else if (dayEntry?.restDay) {
+          cursor = addDays(cursor, -1);
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    // ---------- THEME ----------
+    function applyTheme() {
+      const root = document.documentElement;
+      if (appState.theme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+
+    // ---------- RENDERING ----------
+    let trendChartInstance = null;
+    let compareChartInstance = null;
+
+    function renderHeaderControls() {
+      const select = document.getElementById('profileSelect');
+      select.innerHTML = appState.profiles.map(p => {
+        const tag = p.isOwner ? '' : ' (Imported)';
+        return `<option value="${escapeHtml(p.id)}" ${p.id === appState.activeProfileId ? 'selected' : ''}>${escapeHtml(p.name)}${tag}</option>`;
+      }).join('');
+
+      const compareBtn = document.getElementById('compareToggleBtn');
+      if (appState.profiles.length >= 2) {
+        compareBtn.classList.remove('hidden');
+        compareBtn.classList.add('inline-flex');
+        if (appState.compareMode) {
+          compareBtn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium border border-indigo-500 bg-indigo-600 text-white shadow-sm transition-all shrink-0';
+        } else {
+          compareBtn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shrink-0';
+        }
+      } else {
+        compareBtn.classList.add('hidden');
+        compareBtn.classList.remove('inline-flex');
+        appState.compareMode = false;
+      }
+
+      const profile = getActiveProfile();
+      const banner = document.getElementById('importedBanner');
+      if (!profile.isOwner && !appState.compareMode) {
+        banner.classList.remove('hidden');
+        document.getElementById('importedBannerName').textContent = `Viewing "${profile.name}"`;
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function renderSingleProfile() {
+      const profile = getActiveProfile();
+      const activeHabits = profile.habits.filter(h => !h.archived);
+      const archivedHabits = profile.habits.filter(h => h.archived);
+      const stats = getDayStats(profile, appState.selectedDate);
+
+      // Ring
+      const circumference = 2 * Math.PI * 42; // 263.89
+      const offset = circumference - (stats.pct / 100) * circumference;
+      document.getElementById('ringProgressCircle').style.strokeDashoffset = offset.toFixed(2);
+      document.getElementById('ringPercentText').textContent = `${stats.pct}%`;
+      document.getElementById('selectedDateBadge').textContent = formatDisplayDate(appState.selectedDate);
+      document.getElementById('profileTitleHeading').textContent = profile.name;
+      document.getElementById('completedCountText').textContent = stats.completed;
+      document.getElementById('totalActiveText').textContent = stats.total;
+      document.getElementById('archivedCountBadge').textContent = archivedHabits.length;
+
+      // KPIs
+      let topStreak = 0;
+      let topStreakHabit = 'No streak yet';
+      activeHabits.forEach(h => {
+        const s = getHabitStreak(profile, h);
+        if (s > topStreak) {
+          topStreak = s;
+          topStreakHabit = h.name;
+        }
+      });
+      document.getElementById('kpiTopStreak').textContent = `${topStreak}d`;
+      document.getElementById('kpiTopStreakLabel').textContent = topStreakHabit;
+
+      const today = todayStr();
+      let sum7 = 0;
+      for (let i = 0; i < 7; i++) {
+        sum7 += getDayStats(profile, addDays(today, -i)).pct;
+      }
+      document.getElementById('kpiWeeklyAvg').textContent = `${Math.round(sum7 / 7)}%`;
+
+      let perfect30 = 0;
+      for (let i = 0; i < 30; i++) {
+        const st = getDayStats(profile, addDays(today, -i));
+        if (st.total > 0 && st.pct === 100) perfect30++;
+      }
+      document.getElementById('kpiPerfectDays').textContent = perfect30;
+
+      const loggedDays = Object.keys(profile.logs).filter(d => {
+        const st = getDayStats(profile, d);
+        return st.completed > 0 || (st.note && st.note.trim().length > 0);
+      }).length;
+      document.getElementById('kpiLoggedDays').textContent = loggedDays;
+
+      // Date input
+      document.getElementById('activeDateInput').value = appState.selectedDate;
+      document.getElementById('noteDateLabel').textContent = `(${formatDisplayDate(appState.selectedDate)})`;
+      const restBtn = document.getElementById('restDayToggleBtn');
+      if (stats.restDay) {
+        restBtn.className = 'ml-1 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-sky-400 bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 transition-colors';
+      } else {
+        restBtn.className = 'ml-1 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors';
+      }
+      const remDot = document.getElementById('reminderActiveDot');
+      if (appState.reminderEnabled) remDot.classList.remove('hidden');
+      else remDot.classList.add('hidden');
+      document.getElementById('dailyNoteInput').value = stats.note;
+
+      // Category Filter Bar
+      const categories = ['All', ...new Set(activeHabits.map(h => h.category))];
+      if (!categories.includes(appState.categoryFilter)) appState.categoryFilter = 'All';
+      document.getElementById('categoryFilterBar').innerHTML = categories.map(cat => {
+        const active = appState.categoryFilter === cat;
+        const cls = active
+          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700';
+        return `<button data-cat="${escapeHtml(cat)}" class="cat-filter-btn px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${cls}">${escapeHtml(cat)}</button>`;
+      }).join('');
+
+      // Habits List
+      const filtered = activeHabits.filter(h => appState.categoryFilter === 'All' || h.category === appState.categoryFilter);
+      const listEl = document.getElementById('habitListContainer');
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 text-sm text-slate-400">
+            No active habits in this category. Click <strong>Add Habit</strong> to create one.
+          </div>`;
+      } else {
+        listEl.innerHTML = filtered.map(h => {
+          const val = stats.values[h.id];
+          const done = isHabitCompleted(h, val);
+          const streak = getHabitStreak(profile, h);
+          const catStyle = CATEGORY_COLORS[h.category] || CATEGORY_COLORS['Other'];
+
+          let controlHtml = '';
+          let progressBarHtml = '';
+          if (h.type === 'boolean') {
+            controlHtml = `
+              <button data-toggle-habit="${escapeHtml(h.id)}" aria-label="Toggle ${escapeHtml(h.name)}"
+                class="w-9 h-9 rounded-xl flex items-center justify-center border transition-all ${done
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-emerald-500 text-transparent'}">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </button>`;
+          } else {
+            const numVal = Number(val || 0);
+            const target = Number(h.target || 1);
+            const pct = Math.min(100, Math.round((numVal / target) * 100));
+            controlHtml = `
+              <div class="flex items-center gap-1.5">
+                <button data-step-habit="${escapeHtml(h.id)}" data-delta="-${h.step}" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-sm font-bold">-</button>
+                <div class="flex items-baseline gap-1 min-w-[70px] justify-center">
+                  <input type="number" step="any" min="0" data-num-habit="${escapeHtml(h.id)}" value="${numVal}"
+                    class="w-12 text-center text-sm font-semibold bg-transparent border-b border-slate-300 dark:border-slate-600 focus:outline-none focus:border-emerald-500" />
+                  <span class="text-xs text-slate-400">/ ${target} ${escapeHtml(h.unit || '')}</span>
+                </div>
+                <button data-step-habit="${escapeHtml(h.id)}" data-delta="${h.step}" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-sm font-bold">+</button>
+              </div>`;
+            progressBarHtml = `
+              <div class="mt-2.5 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 ${done ? 'bg-emerald-500' : 'bg-indigo-500'}" style="width:${pct}%"></div>
+              </div>`;
+          }
+
+          return `
+            <div class="rounded-xl border p-3.5 transition-all ${done
+              ? 'border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/15'
+              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}">
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-semibold text-sm ${done ? 'text-emerald-900 dark:text-emerald-200' : ''}">${escapeHtml(h.name)}</span>
+                    <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${catStyle.badge}">${escapeHtml(h.category)}</span>
+                    ${streak > 0 ? `<span class="inline-flex items-center gap-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400"><i data-lucide="flame" class="w-3 h-3"></i>${streak}d</span>` : ''}
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  ${controlHtml}
+                  <button data-timer-habit="${escapeHtml(h.id)}" title="Start Focus Timer" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="timer" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button data-edit-habit="${escapeHtml(h.id)}" title="Edit habit" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button data-archive-habit="${escapeHtml(h.id)}" title="Archive habit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+              ${progressBarHtml}
+            </div>`;
+        }).join('');
+      }
+
+      renderCalendar(profile);
+      renderWeeklyReview(profile);
+      renderGoals(profile);
+      renderTrendChart(profile);
+    }
+
+    function renderCalendar(profile) {
+      const weekBtn = document.getElementById('calModeWeekBtn');
+      const monthBtn = document.getElementById('calModeMonthBtn');
+      const activeCls = 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm';
+      const inactiveCls = 'text-slate-500 dark:text-slate-400 hover:text-slate-800';
+      weekBtn.className = `px-2.5 py-1 rounded-lg transition-colors ${appState.calendarMode === 'week' ? activeCls : inactiveCls}`;
+      monthBtn.className = `px-2.5 py-1 rounded-lg transition-colors ${appState.calendarMode === 'month' ? activeCls : inactiveCls}`;
+
+      const container = document.getElementById('calendarGridContainer');
+      const anchor = parseDateStr(appState.calendarAnchor);
+
+      if (appState.calendarMode === 'week') {
+        // Find Sunday..Saturday of anchor's week
+        const start = new Date(anchor);
+        start.setDate(anchor.getDate() - anchor.getDay());
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(start);
+          d.setDate(start.getDate() + i);
+          days.push(toDateStr(d));
+        }
+        const startFmt = parseDateStr(days[0]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const endFmt = parseDateStr(days[6]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        document.getElementById('calPeriodLabel').textContent = `${startFmt} – ${endFmt}`;
+
+        const activeHabits = profile.habits.filter(h => !h.archived);
+        let html = `<div class="grid grid-cols-8 gap-1.5 text-[11px] font-medium text-slate-400 mb-2 items-center">
+          <div>Habit</div>`;
+        days.forEach(ds => {
+          const dObj = parseDateStr(ds);
+          const isSel = ds === appState.selectedDate;
+          const lbl = dObj.toLocaleDateString(undefined, { weekday: 'narrow' });
+          html += `<button data-pick-date="${ds}" class="text-center py-1 rounded-lg transition-colors ${isSel ? 'bg-indigo-600 text-white font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}">
+            <div>${lbl}</div>
+            <div class="text-[10px] opacity-80">${dObj.getDate()}</div>
+          </button>`;
+        });
+        html += `</div><div class="space-y-1.5">`;
+
+        activeHabits.forEach(h => {
+          html += `<div class="grid grid-cols-8 gap-1.5 items-center">
+            <div class="text-xs truncate pr-1 text-slate-600 dark:text-slate-300" title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</div>`;
+          days.forEach(ds => {
+            const val = profile.logs[ds]?.values?.[h.id];
+            const done = isHabitCompleted(h, val);
+            const partial = !done && Number(val || 0) > 0;
+            const cellCls = done
+              ? 'bg-emerald-500 text-white'
+              : partial
+                ? 'bg-emerald-200 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600';
+            html += `<button data-pick-date="${ds}" title="${escapeHtml(h.name)} on ${ds}" class="h-7 rounded-md flex items-center justify-center text-[10px] font-semibold transition-transform hover:scale-105 ${cellCls}">
+              ${done ? '✓' : partial ? '·' : ''}
+            </button>`;
+          });
+          html += `</div>`;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+      } else {
+        // Monthly Calendar Grid
+        const year = anchor.getFullYear();
+        const month = anchor.getMonth();
+        document.getElementById('calPeriodLabel').textContent = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        const firstDay = new Date(year, month, 1);
+        const startOffset = firstDay.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let html = `<div class="grid grid-cols-7 gap-1.5 text-center text-[11px] font-medium text-slate-400 mb-1.5">
+          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+        </div><div class="grid grid-cols-7 gap-1.5">`;
+
+        for (let i = 0; i < startOffset; i++) {
+          html += `<div></div>`;
+        }
+        for (let day = 1; day <= daysInMonth; day++) {
+          const ds = toDateStr(new Date(year, month, day));
+          const st = getDayStats(profile, ds);
+          const isSel = ds === appState.selectedDate;
+          let bg = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+          if (st.restDay) bg = 'bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-200 font-semibold border border-sky-300 dark:border-sky-700';
+          else if (st.pct >= 100) bg = 'bg-emerald-600 dark:bg-emerald-500 text-white font-semibold';
+          else if (st.pct >= 60) bg = 'bg-emerald-400 dark:bg-emerald-700 text-white font-medium';
+          else if (st.pct > 0) bg = 'bg-emerald-200 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-200';
+          const ring = isSel ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-slate-900' : '';
+          const hasNote = st.note && st.note.trim().length > 0;
+          html += `<button data-pick-date="${ds}" title="${ds}: ${st.pct}% (${st.completed}/${st.total})" class="relative h-9 rounded-lg text-xs flex items-center justify-center transition-all hover:scale-105 ${bg} ${ring}">
+            ${day}
+            ${hasNote ? '<span class="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-indigo-500 dark:bg-indigo-300"></span>' : ''}
+          </button>`;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+      }
+    }
+
+    function getPeriodDaysLeft(period) {
+      const now = new Date();
+      if (period === 'weekly') {
+        const day = now.getDay(); // 0=Sun..6=Sat
+        return 7 - day;
+      }
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      return Math.max(1, lastDay - now.getDate() + 1);
+    }
+
+    function renderGoals(profile) {
+      if (!Array.isArray(profile.goals)) profile.goals = [];
+      const activeCls = 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm';
+      const inactiveCls = 'text-slate-500 dark:text-slate-400 hover:text-slate-800';
+      document.getElementById('goalFilterAllBtn').className = `px-2.5 py-1 rounded-lg transition-colors ${appState.goalFilter === 'all' ? activeCls : inactiveCls}`;
+      document.getElementById('goalFilterWeeklyBtn').className = `px-2.5 py-1 rounded-lg transition-colors ${appState.goalFilter === 'weekly' ? activeCls : inactiveCls}`;
+      document.getElementById('goalFilterMonthlyBtn').className = `px-2.5 py-1 rounded-lg transition-colors ${appState.goalFilter === 'monthly' ? activeCls : inactiveCls}`;
+
+      const container = document.getElementById('goalsGridContainer');
+      const filtered = profile.goals.filter(g => appState.goalFilter === 'all' || g.period === appState.goalFilter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center space-y-3">
+            <p class="text-sm text-slate-500 dark:text-slate-400">No ${appState.goalFilter === 'all' ? 'weekly or monthly' : appState.goalFilter} goals yet. Add one or start with a quick template:</p>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <button data-quick-goal="study" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">+ Subject Chapters (Monthly)</button>
+              <button data-quick-goal="weight" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100">+ Fitness / Weight Goal (Weekly)</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(g => {
+        const cur = Number(g.current || 0);
+        const tgt = Math.max(0.1, Number(g.target || 1));
+        const pct = Math.min(100, Math.round((cur / tgt) * 100));
+        const done = cur >= tgt;
+        const catStyle = CATEGORY_COLORS[g.category] || CATEGORY_COLORS['Other'];
+        const periodBadge = g.period === 'weekly'
+          ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
+          : 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300';
+        const daysLeft = getPeriodDaysLeft(g.period);
+
+        return `
+          <div class="rounded-xl border p-4 flex flex-col justify-between gap-3 transition-all ${done
+            ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/15'
+            : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30'}">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${periodBadge}">${g.period === 'weekly' ? 'Weekly' : 'Monthly'}</span>
+                  <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${catStyle.badge}">${escapeHtml(g.category)}</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button data-edit-goal="${escapeHtml(g.id)}" title="Edit goal" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button data-delete-goal="${escapeHtml(g.id)}" title="Delete goal" class="p-1 rounded-lg text-slate-400 hover:text-rose-600">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+              <h3 class="font-semibold text-sm mt-2 ${done ? 'text-emerald-800 dark:text-emerald-200' : ''}">${escapeHtml(g.title)}</h3>
+              <div class="text-[11px] text-slate-400 mt-0.5">${daysLeft}d left in ${g.period === 'weekly' ? 'week' : 'month'}</div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200'}">${pct}% complete</span>
+                <span class="text-slate-500 dark:text-slate-400">${cur} / ${tgt} ${escapeHtml(g.unit || '')}</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-slate-200/80 dark:bg-slate-700 overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 ${done ? 'bg-emerald-500' : 'bg-indigo-500'}" style="width:${pct}%"></div>
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <button data-step-goal="${escapeHtml(g.id)}" data-delta="-${g.step || 1}" class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold">-${g.step || 1}</button>
+                <input type="number" step="any" min="0" data-num-goal="${escapeHtml(g.id)}" value="${cur}"
+                  class="w-16 text-center text-xs font-semibold bg-transparent border-b border-slate-300 dark:border-slate-600 focus:outline-none focus:border-indigo-500" />
+                <button data-step-goal="${escapeHtml(g.id)}" data-delta="${g.step || 1}" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">+${g.step || 1}</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderWeeklyReview(profile) {
+      const container = document.getElementById('weeklyReviewContent');
+      const activeHabits = profile.habits.filter(h => !h.archived);
+      const today = todayStr();
+
+      let strongestName = '—';
+      let strongestCount = -1;
+      let biggestJumpName = '—';
+      let biggestJumpDelta = -999;
+      let restDaysCount = 0;
+      let perfectDaysCount = 0;
+
+      for (let i = 0; i < 7; i++) {
+        const st = getDayStats(profile, addDays(today, -i));
+        if (st.restDay) restDaysCount++;
+        if (st.total > 0 && st.pct === 100) perfectDaysCount++;
+      }
+
+      activeHabits.forEach(h => {
+        let cur7 = 0, prev7 = 0;
+        for (let i = 0; i < 7; i++) {
+          if (isHabitCompleted(h, profile.logs[addDays(today, -i)]?.values?.[h.id])) cur7++;
+          if (isHabitCompleted(h, profile.logs[addDays(today, -(i + 7))]?.values?.[h.id])) prev7++;
+        }
+        if (cur7 > strongestCount) {
+          strongestCount = cur7;
+          strongestName = h.name;
+        }
+        const delta = cur7 - prev7;
+        if (delta > biggestJumpDelta) {
+          biggestJumpDelta = delta;
+          biggestJumpName = h.name;
+        }
+      });
+
+      const weeklyGoals = (profile.goals || []).filter(g => g.period === 'weekly');
+      const goalAvg = weeklyGoals.length > 0
+        ? Math.round(weeklyGoals.reduce((acc, g) => acc + Math.min(100, (Number(g.current || 0) / Math.max(0.1, Number(g.target || 1))) * 100), 0) / weeklyGoals.length)
+        : null;
+
+      container.innerHTML = `
+        <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800">
+          <div class="text-[11px] font-medium text-slate-400">Strongest Habit</div>
+          <div class="text-sm font-bold truncate mt-0.5">${escapeHtml(strongestName)}</div>
+          <div class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">${strongestCount >= 0 ? `${strongestCount}/7 days done` : 'Start logging'}</div>
+        </div>
+        <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800">
+          <div class="text-[11px] font-medium text-slate-400">Biggest Momentum</div>
+          <div class="text-sm font-bold truncate mt-0.5">${escapeHtml(biggestJumpName)}</div>
+          <div class="text-[11px] text-indigo-600 dark:text-indigo-400 mt-0.5">${biggestJumpDelta > 0 ? `+${biggestJumpDelta} days vs last wk` : 'Steady pace'}</div>
+        </div>
+        <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800">
+          <div class="text-[11px] font-medium text-slate-400">Weekly Goals</div>
+          <div class="text-sm font-bold mt-0.5">${goalAvg !== null ? `${goalAvg}%` : 'No weekly goals'}</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${weeklyGoals.length} active target${weeklyGoals.length === 1 ? '' : 's'}</div>
+        </div>
+        <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800">
+          <div class="text-[11px] font-medium text-slate-400">Perfect &amp; Rest Days</div>
+          <div class="text-sm font-bold mt-0.5">${perfectDaysCount} perfect · ${restDaysCount} rest</div>
+          <div class="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">Streaks protected</div>
+        </div>`;
+    }
+
+    function renderTrendChart(profile) {
+      const compBtn = document.getElementById('chartTypeCompletionBtn');
+      const numBtn = document.getElementById('chartTypeNumericBtn');
+      const activeCls = 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm';
+      const inactiveCls = 'text-slate-500 dark:text-slate-400';
+      compBtn.className = `px-2.5 py-1 rounded-lg transition-colors ${appState.chartMode === 'completion' ? activeCls : inactiveCls}`;
+      numBtn.className = `px-2.5 py-1 rounded-lg transition-colors ${appState.chartMode === 'numeric' ? activeCls : inactiveCls}`;
+
+      const numRow = document.getElementById('numericHabitSelectorRow');
+      const numericHabits = profile.habits.filter(h => !h.archived && h.type === 'number');
+
+      if (appState.chartMode === 'numeric') {
+        numRow.classList.remove('hidden');
+        numRow.classList.add('flex');
+        if (appState.selectedNumericHabitIds.length === 0 && numericHabits.length > 0) {
+          appState.selectedNumericHabitIds = numericHabits.slice(0, 2).map(h => h.id);
+        }
+        numRow.innerHTML = numericHabits.length === 0
+          ? `<span class="text-xs text-slate-400">No active numeric habits to plot.</span>`
+          : numericHabits.map(h => {
+              const sel = appState.selectedNumericHabitIds.includes(h.id);
+              return `<button data-chart-habit="${escapeHtml(h.id)}" class="px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${sel
+                ? 'bg-indigo-600 border-indigo-600 text-white'
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}">${escapeHtml(h.name)} (${escapeHtml(h.unit || '')})</button>`;
+            }).join('');
+      } else {
+        numRow.classList.add('hidden');
+        numRow.classList.remove('flex');
+      }
+
+      const range = Number(appState.chartRange || 14);
+      const today = todayStr();
+      const dates = [];
+      for (let i = range - 1; i >= 0; i--) {
+        dates.push(addDays(today, -i));
+      }
+      const labels = dates.map(ds => parseDateStr(ds).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+
+      const isDark = appState.theme === 'dark';
+      const gridColor = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.22)';
+      const tickColor = isDark ? '#94a3b8' : '#64748b';
+
+      let datasets = [];
+      if (appState.chartMode === 'completion') {
+        datasets = [{
+          label: 'Completion %',
+          data: dates.map(ds => getDayStats(profile, ds).pct),
+          borderColor: '#10b981',
+          backgroundColor: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.12)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3
+        }];
+      } else {
+        const palette = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9'];
+        const chosen = numericHabits.filter(h => appState.selectedNumericHabitIds.includes(h.id));
+        datasets = chosen.map((h, idx) => ({
+          label: `${h.name} (${h.unit || ''})`,
+          data: dates.map(ds => Number(profile.logs[ds]?.values?.[h.id] || 0)),
+          borderColor: palette[idx % palette.length],
+          backgroundColor: 'transparent',
+          tension: 0.35,
+          pointRadius: 3
+        }));
+      }
+
+      const ctx = document.getElementById('trendChartCanvas').getContext('2d');
+      if (trendChartInstance) trendChartInstance.destroy();
+      trendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { labels: { color: tickColor, boxWidth: 12, font: { size: 12 } } } },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: tickColor, maxTicksLimit: 10 } },
+            y: {
+              beginAtZero: true,
+              suggestedMax: appState.chartMode === 'completion' ? 100 : undefined,
+              grid: { color: gridColor },
+              ticks: { color: tickColor }
+            }
+          }
+        }
+      });
+    }
+
+    function renderCompareView() {
+      const leftSel = document.getElementById('compareLeftSelect');
+      const rightSel = document.getElementById('compareRightSelect');
+      if (!appState.compareLeftId || !appState.profiles.find(p => p.id === appState.compareLeftId)) {
+        appState.compareLeftId = appState.profiles[0].id;
+      }
+      if (!appState.compareRightId || !appState.profiles.find(p => p.id === appState.compareRightId)) {
+        appState.compareRightId = (appState.profiles.find(p => p.id !== appState.compareLeftId) || appState.profiles[0]).id;
+      }
+
+      const optsHtml = (selectedId) => appState.profiles.map(p =>
+        `<option value="${escapeHtml(p.id)}" ${p.id === selectedId ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+      ).join('');
+      leftSel.innerHTML = optsHtml(appState.compareLeftId);
+      rightSel.innerHTML = optsHtml(appState.compareRightId);
+      document.getElementById('compareDateInput').value = appState.selectedDate;
+
+      const leftProf = appState.profiles.find(p => p.id === appState.compareLeftId);
+      const rightProf = appState.profiles.find(p => p.id === appState.compareRightId);
+
+      const renderPersonCard = (prof, accent) => {
+        const st = getDayStats(prof, appState.selectedDate);
+        const activeHabits = prof.habits.filter(h => !h.archived);
+        const rows = activeHabits.map(h => {
+          const val = st.values[h.id];
+          const done = isHabitCompleted(h, val);
+          const streak = getHabitStreak(prof, h);
+          const displayVal = h.type === 'boolean'
+            ? (done ? 'Done' : 'Pending')
+            : `${Number(val || 0)} / ${h.target} ${escapeHtml(h.unit || '')}`;
+          return `
+            <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0 text-xs sm:text-sm">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0 ${done ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}"></span>
+                <span class="truncate font-medium">${escapeHtml(h.name)}</span>
+              </div>
+              <div class="flex items-center gap-2.5 shrink-0">
+                ${streak > 0 ? `<span class="text-xs text-amber-500 font-semibold">${streak}d</span>` : ''}
+                <span class="text-xs font-semibold ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">${displayVal}</span>
+              </div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs font-semibold uppercase tracking-wider ${accent}">${prof.isOwner ? 'Owner Profile' : 'Imported Profile'}</div>
+                <h3 class="text-base font-bold">${escapeHtml(prof.name)}</h3>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${st.pct}%</div>
+                <div class="text-xs text-slate-400">${st.completed}/${st.total} done</div>
+              </div>
+            </div>
+            <div>${rows || '<div class="text-xs text-slate-400 py-3">No active habits</div>'}</div>
+            ${(prof.goals && prof.goals.length > 0) ? `<div class="pt-2 border-t border-slate-200/70 dark:border-slate-700/70 space-y-1.5"><div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Goals</div>${prof.goals.map(g => `<div class="flex items-center justify-between text-xs"><span>${escapeHtml(g.title)} <span class="text-slate-400">(${g.period})</span></span><span class="font-semibold">${g.current} / ${g.target} ${escapeHtml(g.unit || '')}</span></div>`).join('')}</div>` : ''}
+            ${st.note ? `<div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-slate-600 dark:text-slate-300"><strong>Note:</strong> ${escapeHtml(st.note)}</div>` : ''}
+          </div>`;
+      };
+
+      document.getElementById('compareCardsGrid').innerHTML =
+        renderPersonCard(leftProf, 'text-emerald-600 dark:text-emerald-400') +
+        renderPersonCard(rightProf, 'text-indigo-600 dark:text-indigo-400');
+
+      // Combined 14-day chart
+      const today = todayStr();
+      const dates = [];
+      for (let i = 13; i >= 0; i--) dates.push(addDays(today, -i));
+      const labels = dates.map(ds => parseDateStr(ds).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+      const isDark = appState.theme === 'dark';
+      const gridColor = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.22)';
+      const tickColor = isDark ? '#94a3b8' : '#64748b';
+
+      const ctx = document.getElementById('compareTrendChart').getContext('2d');
+      if (compareChartInstance) compareChartInstance.destroy();
+      compareChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: leftProf.name,
+              data: dates.map(ds => getDayStats(leftProf, ds).pct),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16,185,129,0.1)',
+              tension: 0.35,
+              pointRadius: 3
+            },
+            {
+              label: rightProf.name,
+              data: dates.map(ds => getDayStats(rightProf, ds).pct),
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99,102,241,0.1)',
+              tension: 0.35,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { labels: { color: tickColor } } },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+            y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: tickColor } }
+          }
+        }
+      });
+    }
+
+    function renderAll() {
+      applyTheme();
+      renderHeaderControls();
+      const singleEl = document.getElementById('singleProfileView');
+      const compareEl = document.getElementById('compareView');
+      if (appState.compareMode && appState.profiles.length >= 2) {
+        singleEl.classList.add('hidden');
+        compareEl.classList.remove('hidden');
+        renderCompareView();
+      } else {
+        compareEl.classList.add('hidden');
+        singleEl.classList.remove('hidden');
+        renderSingleProfile();
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    // ---------- MUTATIONS & EVENTS ----------
+    function updateHabitValue(habitId, newValue) {
+      const profile = getActiveProfile();
+      if (!profile.logs[appState.selectedDate]) {
+        profile.logs[appState.selectedDate] = { values: {}, note: '' };
+      }
+      const prevPct = getDayStats(profile, appState.selectedDate).pct;
+      profile.logs[appState.selectedDate].values[habitId] = newValue;
+      const nextPct = getDayStats(profile, appState.selectedDate).pct;
+      saveState();
+      renderAll();
+      if (prevPct < 100 && nextPct === 100 && appState.soundEnabled) {
+        playChime();
+        showToast('100% completed for the day!');
+      }
+    }
+
+    // Delegated clicks for Habit List & Calendar
+    document.getElementById('habitListContainer').addEventListener('click', (e) => {
+      const toggleBtn = e.target.closest('[data-toggle-habit]');
+      if (toggleBtn) {
+        const id = toggleBtn.getAttribute('data-toggle-habit');
+        const profile = getActiveProfile();
+        const cur = Boolean(profile.logs[appState.selectedDate]?.values?.[id]);
+        updateHabitValue(id, !cur);
+        return;
+      }
+      const stepBtn = e.target.closest('[data-step-habit]');
+      if (stepBtn) {
+        const id = stepBtn.getAttribute('data-step-habit');
+        const delta = parseFloat(stepBtn.getAttribute('data-delta'));
+        const profile = getActiveProfile();
+        const cur = Number(profile.logs[appState.selectedDate]?.values?.[id] || 0);
+        const next = Math.max(0, Math.round((cur + delta) * 100) / 100);
+        updateHabitValue(id, next);
+        return;
+      }
+      const timerBtn = e.target.closest('[data-timer-habit]');
+      if (timerBtn) {
+        openFocusTimer(timerBtn.getAttribute('data-timer-habit'));
+        return;
+      }
+      const editBtn = e.target.closest('[data-edit-habit]');
+      if (editBtn) {
+        openHabitModal(editBtn.getAttribute('data-edit-habit'));
+        return;
+      }
+      const archBtn = e.target.closest('[data-archive-habit]');
+      if (archBtn) {
+        const id = archBtn.getAttribute('data-archive-habit');
+        const profile = getActiveProfile();
+        const h = profile.habits.find(x => x.id === id);
+        if (h) {
+          h.archived = true;
+          saveState();
+          renderAll();
+          showToast(`Archived "${h.name}"`);
+        }
+      }
+    });
+
+    document.getElementById('habitListContainer').addEventListener('change', (e) => {
+      const numInput = e.target.closest('[data-num-habit]');
+      if (numInput) {
+        const id = numInput.getAttribute('data-num-habit');
+        const val = Math.max(0, parseFloat(numInput.value) || 0);
+        updateHabitValue(id, val);
+      }
+    });
+
+    document.getElementById('categoryFilterBar').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cat]');
+      if (btn) {
+        appState.categoryFilter = btn.getAttribute('data-cat');
+        renderAll();
+      }
+    });
+
+    document.getElementById('calendarGridContainer').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-pick-date]');
+      if (btn) {
+        appState.selectedDate = btn.getAttribute('data-pick-date');
+        renderAll();
+      }
+    });
+
+    document.getElementById('numericHabitSelectorRow').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-chart-habit]');
+      if (btn) {
+        const id = btn.getAttribute('data-chart-habit');
+        const idx = appState.selectedNumericHabitIds.indexOf(id);
+        if (idx >= 0) appState.selectedNumericHabitIds.splice(idx, 1);
+        else appState.selectedNumericHabitIds.push(id);
+        renderTrendChart(getActiveProfile());
+      }
+    });
+
+    // Date Navigation
+    document.getElementById('prevDayBtn').addEventListener('click', () => {
+      appState.selectedDate = addDays(appState.selectedDate, -1);
+      appState.calendarAnchor = appState.selectedDate;
+      renderAll();
+    });
+    document.getElementById('nextDayBtn').addEventListener('click', () => {
+      appState.selectedDate = addDays(appState.selectedDate, 1);
+      appState.calendarAnchor = appState.selectedDate;
+      renderAll();
+    });
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      appState.selectedDate = todayStr();
+      appState.calendarAnchor = todayStr();
+      renderAll();
+    });
+    document.getElementById('activeDateInput').addEventListener('change', (e) => {
+      if (e.target.value) {
+        appState.selectedDate = e.target.value;
+        appState.calendarAnchor = e.target.value;
+        renderAll();
+      }
+    });
+
+    // Daily Note Auto-save
+    let noteTimer = null;
+    document.getElementById('dailyNoteInput').addEventListener('input', (e) => {
+      const profile = getActiveProfile();
+      if (!profile.logs[appState.selectedDate]) {
+        profile.logs[appState.selectedDate] = { values: {}, note: '' };
+      }
+      profile.logs[appState.selectedDate].note = e.target.value;
+      saveState();
+      const status = document.getElementById('noteSavedStatus');
+      status.classList.remove('opacity-0');
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => status.classList.add('opacity-0'), 1400);
+    });
+
+    // Calendar Mode & Nav
+    document.getElementById('calModeWeekBtn').addEventListener('click', () => {
+      appState.calendarMode = 'week';
+      saveState();
+      renderAll();
+    });
+    document.getElementById('calModeMonthBtn').addEventListener('click', () => {
+      appState.calendarMode = 'month';
+      saveState();
+      renderAll();
+    });
+    document.getElementById('calPrevBtn').addEventListener('click', () => {
+      const d = parseDateStr(appState.calendarAnchor);
+      if (appState.calendarMode === 'week') d.setDate(d.getDate() - 7);
+      else d.setMonth(d.getMonth() - 1);
+      appState.calendarAnchor = toDateStr(d);
+      renderAll();
+    });
+    document.getElementById('calNextBtn').addEventListener('click', () => {
+      const d = parseDateStr(appState.calendarAnchor);
+      if (appState.calendarMode === 'week') d.setDate(d.getDate() + 7);
+      else d.setMonth(d.getMonth() + 1);
+      appState.calendarAnchor = toDateStr(d);
+      renderAll();
+    });
+
+    // Chart Controls
+    document.getElementById('chartTypeCompletionBtn').addEventListener('click', () => {
+      appState.chartMode = 'completion';
+      saveState();
+      renderTrendChart(getActiveProfile());
+    });
+    document.getElementById('chartTypeNumericBtn').addEventListener('click', () => {
+      appState.chartMode = 'numeric';
+      saveState();
+      renderTrendChart(getActiveProfile());
+    });
+    document.getElementById('chartRangeSelect').addEventListener('change', (e) => {
+      appState.chartRange = Number(e.target.value);
+      saveState();
+      renderTrendChart(getActiveProfile());
+    });
+
+    // Theme Toggle
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      appState.theme = appState.theme === 'light' ? 'dark' : 'light';
+      saveState();
+      renderAll();
+    });
+
+    // Add / Edit Habit Modal
+    function openHabitModal(habitId = null) {
+      const modal = document.getElementById('habitModal');
+      const profile = getActiveProfile();
+      const existing = habitId ? profile.habits.find(h => h.id === habitId) : null;
+      document.getElementById('habitModalTitle').textContent = existing ? 'Edit Habit' : 'Add Custom Habit';
+      document.getElementById('habitIdInput').value = existing ? existing.id : '';
+      document.getElementById('habitNameInput').value = existing ? existing.name : '';
+      document.getElementById('habitCategoryInput').value = existing ? existing.category : 'Daily Routine';
+      document.getElementById('habitTypeInput').value = existing ? existing.type : 'boolean';
+      document.getElementById('habitTargetInput').value = existing ? existing.target : 1;
+      document.getElementById('habitStepInput').value = existing ? existing.step : 1;
+      document.getElementById('habitUnitInput').value = existing ? (existing.unit || '') : 'hrs';
+      toggleNumericFields();
+      modal.classList.remove('hidden');
+    }
+
+    function toggleNumericFields() {
+      const type = document.getElementById('habitTypeInput').value;
+      const grp = document.getElementById('numericFieldsGroup');
+      if (type === 'number') {
+        grp.classList.remove('hidden');
+        grp.classList.add('grid');
+      } else {
+        grp.classList.add('hidden');
+        grp.classList.remove('grid');
+      }
+    }
+
+    document.getElementById('habitTypeInput').addEventListener('change', toggleNumericFields);
+    document.getElementById('addHabitBtn').addEventListener('click', () => openHabitModal(null));
+    document.getElementById('closeHabitModalBtn').addEventListener('click', () => document.getElementById('habitModal').classList.add('hidden'));
+    document.getElementById('cancelHabitModalBtn').addEventListener('click', () => document.getElementById('habitModal').classList.add('hidden'));
+
+    document.getElementById('habitForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const profile = getActiveProfile();
+      const id = document.getElementById('habitIdInput').value;
+      const name = document.getElementById('habitNameInput').value.trim();
+      if (!name) return;
+      const category = document.getElementById('habitCategoryInput').value;
+      const type = document.getElementById('habitTypeInput').value;
+      const target = Math.max(0.1, parseFloat(document.getElementById('habitTargetInput').value) || 1);
+      const step = Math.max(0.1, parseFloat(document.getElementById('habitStepInput').value) || 1);
+      const unit = document.getElementById('habitUnitInput').value.trim();
+
+      if (id) {
+        const h = profile.habits.find(x => x.id === id);
+        if (h) Object.assign(h, { name, category, type, target, step, unit });
+        showToast(`Updated "${name}"`);
+      } else {
+        profile.habits.push({ id: uid('h'), name, category, type, target, step, unit, archived: false });
+        showToast(`Added "${name}"`);
+      }
+      saveState();
+      document.getElementById('habitModal').classList.add('hidden');
+      renderAll();
+    });
+
+    // Archived Habits Modal
+    function renderArchivedModal() {
+      const profile = getActiveProfile();
+      const archived = profile.habits.filter(h => h.archived);
+      const container = document.getElementById('archivedListContainer');
+      if (archived.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">No archived habits.</p>`;
+      } else {
+        container.innerHTML = archived.map(h => `
+          <div class="flex items-center justify-between gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div>
+              <div class="text-sm font-semibold">${escapeHtml(h.name)}</div>
+              <div class="text-xs text-slate-400">${escapeHtml(h.category)}</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button data-restore-habit="${escapeHtml(h.id)}" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">Restore</button>
+              <button data-delete-habit="${escapeHtml(h.id)}" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300">Delete</button>
+            </div>
+          </div>`).join('');
+      }
+    }
+
+    document.getElementById('manageArchivedBtn').addEventListener('click', () => {
+      renderArchivedModal();
+      document.getElementById('archivedModal').classList.remove('hidden');
+    });
+    document.getElementById('closeArchivedModalBtn').addEventListener('click', () => document.getElementById('archivedModal').classList.add('hidden'));
+    document.getElementById('archivedListContainer').addEventListener('click', (e) => {
+      const profile = getActiveProfile();
+      const restoreBtn = e.target.closest('[data-restore-habit]');
+      if (restoreBtn) {
+        const h = profile.habits.find(x => x.id === restoreBtn.getAttribute('data-restore-habit'));
+        if (h) h.archived = false;
+        saveState();
+        renderArchivedModal();
+        renderAll();
+        showToast('Habit restored');
+        return;
+      }
+      const delBtn = e.target.closest('[data-delete-habit]');
+      if (delBtn) {
+        const id = delBtn.getAttribute('data-delete-habit');
+        profile.habits = profile.habits.filter(x => x.id !== id);
+        saveState();
+        renderArchivedModal();
+        renderAll();
+        showToast('Habit deleted permanently');
+      }
+    });
+
+    // Profile Switcher & Compare Mode
+    document.getElementById('profileSelect').addEventListener('change', (e) => {
+      appState.activeProfileId = e.target.value;
+      appState.compareMode = false;
+      appState.selectedNumericHabitIds = [];
+      saveState();
+      renderAll();
+    });
+
+    document.getElementById('compareToggleBtn').addEventListener('click', () => {
+      appState.compareMode = !appState.compareMode;
+      renderAll();
+    });
+    document.getElementById('bannerCompareBtn').addEventListener('click', () => {
+      appState.compareLeftId = appState.profiles[0].id;
+      appState.compareRightId = appState.activeProfileId;
+      appState.compareMode = true;
+      renderAll();
+    });
+    document.getElementById('bannerBackToMeBtn').addEventListener('click', () => {
+      appState.activeProfileId = appState.profiles[0].id;
+      appState.compareMode = false;
+      saveState();
+      renderAll();
+    });
+
+    document.getElementById('compareLeftSelect').addEventListener('change', (e) => {
+      appState.compareLeftId = e.target.value;
+      renderCompareView();
+    });
+    document.getElementById('compareRightSelect').addEventListener('change', (e) => {
+      appState.compareRightId = e.target.value;
+      renderCompareView();
+    });
+    document.getElementById('compareDateInput').addEventListener('change', (e) => {
+      if (e.target.value) {
+        appState.selectedDate = e.target.value;
+        renderCompareView();
+      }
+    });
+
+    // Manage Profiles Modal
+    function renderProfilesModal() {
+      const container = document.getElementById('profilesListContainer');
+      container.innerHTML = appState.profiles.map(p => `
+        <div class="flex items-center justify-between gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div class="min-w-0 flex-1">
+            <input type="text" data-rename-profile="${escapeHtml(p.id)}" value="${escapeHtml(p.name)}"
+              class="w-full text-sm font-semibold bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none" />
+            <div class="text-[11px] text-slate-400 mt-0.5">${p.isOwner ? 'Primary Owner' : 'Imported / Secondary Profile'} · ${p.habits.length} habits</div>
+          </div>
+          ${!p.isOwner ? `<button data-remove-profile="${escapeHtml(p.id)}" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300">Remove</button>` : ''}
+        </div>`).join('');
+    }
+
+    document.getElementById('editProfileBtn').addEventListener('click', () => {
+      renderProfilesModal();
+      document.getElementById('profilesModal').classList.remove('hidden');
+    });
+    document.getElementById('closeProfilesModalBtn').addEventListener('click', () => document.getElementById('profilesModal').classList.add('hidden'));
+
+    document.getElementById('profilesListContainer').addEventListener('change', (e) => {
+      const input = e.target.closest('[data-rename-profile]');
+      if (input) {
+        const p = appState.profiles.find(x => x.id === input.getAttribute('data-rename-profile'));
+        if (p && input.value.trim()) {
+          p.name = input.value.trim();
+          saveState();
+          renderAll();
+          showToast('Profile renamed');
+        }
+      }
+    });
+    document.getElementById('profilesListContainer').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-remove-profile]');
+      if (btn) {
+        const id = btn.getAttribute('data-remove-profile');
+        appState.profiles = appState.profiles.filter(x => x.id !== id);
+        if (appState.activeProfileId === id) appState.activeProfileId = appState.profiles[0].id;
+        saveState();
+        renderProfilesModal();
+        renderAll();
+        showToast('Profile removed');
+      }
+    });
+    document.getElementById('addLocalProfileForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inp = document.getElementById('newLocalProfileName');
+      const name = inp.value.trim();
+      if (!name) return;
+      const newProf = { id: uid('prof'), name, isOwner: false, importedAt: null, habits: defaultHabits(), goals: [], logs: {} };
+      appState.profiles.push(newProf);
+      appState.activeProfileId = newProf.id;
+      inp.value = '';
+      saveState();
+      renderProfilesModal();
+      renderAll();
+      showToast(`Created profile "${name}"`);
+    });
+
+    // Export Dropdown & Actions
+    const exportBtn = document.getElementById('exportMenuBtn');
+    const exportDrop = document.getElementById('exportDropdown');
+    exportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportDrop.classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => exportDrop.classList.add('hidden'));
+
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+      const profile = getActiveProfile();
+      const payload = {
+        schema: 'cadence-profile-v1',
+        exportedAt: new Date().toISOString(),
+        profileName: profile.name,
+        habits: profile.habits,
+        goals: profile.goals || [],
+        logs: profile.logs
+      };
+      const slug = profile.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      downloadFile(`cadence-${slug}-${todayStr()}.json`, JSON.stringify(payload, null, 2), 'application/json');
+      showToast(`Exported "${profile.name}" as JSON`);
+    });
+
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      const profile = getActiveProfile();
+      const rows = [['Date', 'Habit', 'Category', 'Type', 'Value', 'Target', 'Unit', 'Completed', 'DailyNote']];
+      const dates = Object.keys(profile.logs).sort();
+      if (dates.length === 0) dates.push(todayStr());
+      dates.forEach(ds => {
+        const log = profile.logs[ds] || { values: {}, note: '' };
+        profile.habits.forEach(h => {
+          const val = log.values?.[h.id] ?? '';
+          const done = isHabitCompleted(h, val);
+          rows.push([
+            ds,
+            `"${(h.name || '').replace(/"/g, '""')}"`,
+            `"${(h.category || '').replace(/"/g, '""')}"`,
+            h.type,
+            val,
+            h.target,
+            `"${(h.unit || '').replace(/"/g, '""')}"`,
+            done ? 'Yes' : 'No',
+            `"${(log.note || '').replace(/"/g, '""')}"`
+          ]);
+        });
+      });
+      const slug = profile.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      downloadFile(`cadence-${slug}-${todayStr()}.csv`, rows.map(r => r.join(',')).join('\n'), 'text/csv;charset=utf-8;');
+      showToast(`Exported "${profile.name}" as CSV`);
+    });
+
+    // Non-Destructive Import (JSON / CSV)
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importProfileNameInput').value = '';
+      document.getElementById('importFileInput').value = '';
+      document.getElementById('importModal').classList.remove('hidden');
+    });
+    document.getElementById('closeImportModalBtn').addEventListener('click', () => document.getElementById('importModal').classList.add('hidden'));
+
+    function parseCsvLine(line) {
+      const res = [];
+      let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+          else inQ = !inQ;
+        } else if (ch === ',' && !inQ) {
+          res.push(cur); cur = '';
+        } else cur += ch;
+      }
+      res.push(cur);
+      return res;
+    }
+
+    document.getElementById('importFileInput').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const customName = document.getElementById('importProfileNameInput').value.trim();
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = String(reader.result || '');
+          let newProfile = null;
+          if (file.name.toLowerCase().endsWith('.json')) {
+            const data = JSON.parse(text);
+            if (!data || !Array.isArray(data.habits) || typeof data.logs !== 'object') {
+              throw new Error('Invalid HabitFlow JSON format');
+            }
+            newProfile = {
+              id: uid('imp'),
+              name: customName || data.profileName || file.name.replace(/\.json$/i, ''),
+              isOwner: false,
+              importedAt: new Date().toISOString(),
+              habits: data.habits,
+              goals: Array.isArray(data.goals) ? data.goals : [],
+              logs: data.logs
+            };
+          } else {
+            // Parse CSV exported by HabitFlow
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) throw new Error('CSV file is empty');
+            const habitMap = {};
+            const logs = {};
+            for (let i = 1; i < lines.length; i++) {
+              const cols = parseCsvLine(lines[i]);
+              const [ds, hName, cat, type, valStr, targetStr, unit, _done, note] = cols;
+              if (!ds || !hName) continue;
+              const hKey = `${hName}__${cat}`;
+              if (!habitMap[hKey]) {
+                habitMap[hKey] = {
+                  id: uid('h'),
+                  name: hName,
+                  category: cat || 'Other',
+                  type: type === 'number' ? 'number' : 'boolean',
+                  target: parseFloat(targetStr) || 1,
+                  step: 1,
+                  unit: unit || '',
+                  archived: false
+                };
+              }
+              const hObj = habitMap[hKey];
+              if (!logs[ds]) logs[ds] = { values: {}, note: '' };
+              if (note) logs[ds].note = note;
+              if (valStr !== '' && valStr !== undefined) {
+                logs[ds].values[hObj.id] = hObj.type === 'number' ? (parseFloat(valStr) || 0) : (valStr === 'true' || valStr === 'Yes' || valStr === '1');
+              }
+            }
+            newProfile = {
+              id: uid('imp'),
+              name: customName || file.name.replace(/\.csv$/i, ''),
+              isOwner: false,
+              importedAt: new Date().toISOString(),
+              habits: Object.values(habitMap),
+              goals: [],
+              logs
+            };
+          }
+
+          appState.profiles.push(newProfile);
+          appState.compareLeftId = appState.profiles[0].id;
+          appState.compareRightId = newProfile.id;
+          appState.activeProfileId = newProfile.id;
+          saveState();
+          document.getElementById('importModal').classList.add('hidden');
+          renderAll();
+          showToast(`Imported "${newProfile.name}" — your own data is untouched!`);
+        } catch (err) {
+          showToast('Could not read file. Please use a valid HabitFlow JSON or CSV.');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // ---------- GOALS EVENTS ----------
+    function openGoalModal(goalId = null) {
+      const profile = getActiveProfile();
+      if (!Array.isArray(profile.goals)) profile.goals = [];
+      const existing = goalId ? profile.goals.find(g => g.id === goalId) : null;
+      document.getElementById('goalModalTitle').textContent = existing ? 'Edit Goal' : 'Add Weekly / Monthly Goal';
+      document.getElementById('goalIdInput').value = existing ? existing.id : '';
+      document.getElementById('goalTitleInput').value = existing ? existing.title : '';
+      document.getElementById('goalPeriodInput').value = existing ? existing.period : 'weekly';
+      document.getElementById('goalCategoryInput').value = existing ? existing.category : 'Study';
+      document.getElementById('goalCurrentInput').value = existing ? existing.current : 0;
+      document.getElementById('goalTargetInput').value = existing ? existing.target : 10;
+      document.getElementById('goalStepInput').value = existing ? existing.step : 1;
+      document.getElementById('goalUnitInput').value = existing ? (existing.unit || '') : 'chapters';
+      document.getElementById('goalModal').classList.remove('hidden');
+    }
+
+    document.getElementById('addGoalBtn').addEventListener('click', () => openGoalModal(null));
+    document.getElementById('closeGoalModalBtn').addEventListener('click', () => document.getElementById('goalModal').classList.add('hidden'));
+    document.getElementById('cancelGoalModalBtn').addEventListener('click', () => document.getElementById('goalModal').classList.add('hidden'));
+
+    document.getElementById('goalFilterAllBtn').addEventListener('click', () => { appState.goalFilter = 'all'; renderAll(); });
+    document.getElementById('goalFilterWeeklyBtn').addEventListener('click', () => { appState.goalFilter = 'weekly'; renderAll(); });
+    document.getElementById('goalFilterMonthlyBtn').addEventListener('click', () => { appState.goalFilter = 'monthly'; renderAll(); });
+
+    document.getElementById('goalForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const profile = getActiveProfile();
+      if (!Array.isArray(profile.goals)) profile.goals = [];
+      const id = document.getElementById('goalIdInput').value;
+      const title = document.getElementById('goalTitleInput').value.trim();
+      if (!title) return;
+      const period = document.getElementById('goalPeriodInput').value;
+      const category = document.getElementById('goalCategoryInput').value;
+      const current = Math.max(0, parseFloat(document.getElementById('goalCurrentInput').value) || 0);
+      const target = Math.max(0.1, parseFloat(document.getElementById('goalTargetInput').value) || 1);
+      const step = Math.max(0.1, parseFloat(document.getElementById('goalStepInput').value) || 1);
+      const unit = document.getElementById('goalUnitInput').value.trim();
+
+      if (id) {
+        const g = profile.goals.find(x => x.id === id);
+        if (g) Object.assign(g, { title, period, category, current, target, step, unit });
+        showToast(`Updated goal "${title}"`);
+      } else {
+        profile.goals.push({ id: uid('g'), title, period, category, current, target, step, unit, createdAt: todayStr() });
+        showToast(`Added goal "${title}"`);
+      }
+      saveState();
+      document.getElementById('goalModal').classList.add('hidden');
+      renderAll();
+    });
+
+    document.getElementById('goalsGridContainer').addEventListener('click', (e) => {
+      const profile = getActiveProfile();
+      if (!Array.isArray(profile.goals)) profile.goals = [];
+
+      const quickBtn = e.target.closest('[data-quick-goal]');
+      if (quickBtn) {
+        const kind = quickBtn.getAttribute('data-quick-goal');
+        if (kind === 'study') {
+          profile.goals.push({ id: uid('g'), title: 'Complete Subject Chapters', period: 'monthly', category: 'Study', current: 0, target: 12, step: 1, unit: 'chapters', createdAt: todayStr() });
+        } else {
+          profile.goals.push({ id: uid('g'), title: 'Weekly Workout / Weight Target', period: 'weekly', category: 'Exercise', current: 0, target: 5, step: 1, unit: 'sessions', createdAt: todayStr() });
+        }
+        saveState();
+        renderAll();
+        showToast('Starter goal added!');
+        return;
+      }
+
+      const stepBtn = e.target.closest('[data-step-goal]');
+      if (stepBtn) {
+        const id = stepBtn.getAttribute('data-step-goal');
+        const delta = parseFloat(stepBtn.getAttribute('data-delta'));
+        const g = profile.goals.find(x => x.id === id);
+        if (g) {
+          g.current = Math.max(0, Math.round(((g.current || 0) + delta) * 100) / 100);
+          saveState();
+          renderAll();
+        }
+        return;
+      }
+
+      const editBtn = e.target.closest('[data-edit-goal]');
+      if (editBtn) {
+        openGoalModal(editBtn.getAttribute('data-edit-goal'));
+        return;
+      }
+
+      const delBtn = e.target.closest('[data-delete-goal]');
+      if (delBtn) {
+        const id = delBtn.getAttribute('data-delete-goal');
+        profile.goals = profile.goals.filter(x => x.id !== id);
+        saveState();
+        renderAll();
+        showToast('Goal deleted');
+      }
+    });
+
+    document.getElementById('goalsGridContainer').addEventListener('change', (e) => {
+      const inp = e.target.closest('[data-num-goal]');
+      if (inp) {
+        const profile = getActiveProfile();
+        const g = (profile.goals || []).find(x => x.id === inp.getAttribute('data-num-goal'));
+        if (g) {
+          g.current = Math.max(0, parseFloat(inp.value) || 0);
+          saveState();
+          renderAll();
+        }
+      }
+    });
+
+    // ---------- SOUND CHIME (Web Audio API) ----------
+    function playChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const start = ctx.currentTime + i * 0.09;
+          gain.gain.setValueAtTime(0.001, start);
+          gain.gain.exponentialRampToValueAtTime(0.12, start + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.5);
+        });
+      } catch (e) {}
+    }
+
+    // ---------- REST DAY / STREAK FREEZE ----------
+    document.getElementById('restDayToggleBtn').addEventListener('click', () => {
+      const profile = getActiveProfile();
+      if (!profile.logs[appState.selectedDate]) {
+        profile.logs[appState.selectedDate] = { values: {}, note: '' };
+      }
+      const next = !profile.logs[appState.selectedDate].restDay;
+      profile.logs[appState.selectedDate].restDay = next;
+      saveState();
+      renderAll();
+      showToast(next ? 'Marked as Rest Day — streaks protected!' : 'Rest Day removed');
+    });
+
+    // ---------- FOCUS TIMER ----------
+    let timerState = { habitId: null, totalSec: 25 * 60, remainSec: 25 * 60, running: false, intervalId: null };
+
+    function formatTimer(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function stopTimerInterval() {
+      if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+      }
+      timerState.running = false;
+      document.getElementById('timerStartPauseBtn').textContent = 'Start';
+    }
+
+    function openFocusTimer(habitId) {
+      stopTimerInterval();
+      const profile = getActiveProfile();
+      const h = profile.habits.find(x => x.id === habitId);
+      if (!h) return;
+      timerState.habitId = habitId;
+      timerState.totalSec = 25 * 60;
+      timerState.remainSec = 25 * 60;
+      document.getElementById('timerHabitName').textContent = h.name;
+      document.getElementById('timerDisplay').textContent = formatTimer(timerState.remainSec);
+      document.getElementById('focusTimerModal').classList.remove('hidden');
+    }
+
+    function completeAndLogTimer() {
+      stopTimerInterval();
+      const profile = getActiveProfile();
+      const h = profile.habits.find(x => x.id === timerState.habitId);
+      const elapsedSec = Math.max(60, timerState.totalSec - timerState.remainSec);
+      const elapsedMins = Math.round(elapsedSec / 60);
+      if (h) {
+        if (h.type === 'boolean') {
+          updateHabitValue(h.id, true);
+          showToast(`Completed "${h.name}" (${elapsedMins}m focus)`);
+        } else {
+          const cur = Number(profile.logs[appState.selectedDate]?.values?.[h.id] || 0);
+          const unit = (h.unit || '').toLowerCase();
+          const addVal = unit.startsWith('hr') ? Math.round((elapsedMins / 60) * 100) / 100 : elapsedMins;
+          updateHabitValue(h.id, Math.round((cur + addVal) * 100) / 100);
+          showToast(`Logged +${addVal} ${h.unit || 'mins'} to "${h.name}"`);
+        }
+      }
+      if (appState.soundEnabled) playChime();
+      document.getElementById('focusTimerModal').classList.add('hidden');
+    }
+
+    document.getElementById('closeTimerModalBtn').addEventListener('click', () => {
+      stopTimerInterval();
+      document.getElementById('focusTimerModal').classList.add('hidden');
+    });
+
+    document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        stopTimerInterval();
+        const mins = Number(btn.getAttribute('data-timer-preset'));
+        timerState.totalSec = mins * 60;
+        timerState.remainSec = mins * 60;
+        document.getElementById('timerDisplay').textContent = formatTimer(timerState.remainSec);
+      });
+    });
+
+    document.getElementById('timerStartPauseBtn').addEventListener('click', () => {
+      if (timerState.running) {
+        stopTimerInterval();
+      } else {
+        stopTimerInterval();
+        timerState.running = true;
+        document.getElementById('timerStartPauseBtn').textContent = 'Pause';
+        timerState.intervalId = setInterval(() => {
+          timerState.remainSec = Math.max(0, timerState.remainSec - 1);
+          document.getElementById('timerDisplay').textContent = formatTimer(timerState.remainSec);
+          if (timerState.remainSec === 0) {
+            completeAndLogTimer();
+          }
+        }, 1000);
+      }
+    });
+
+    document.getElementById('timerResetBtn').addEventListener('click', () => {
+      stopTimerInterval();
+      timerState.remainSec = timerState.totalSec;
+      document.getElementById('timerDisplay').textContent = formatTimer(timerState.remainSec);
+    });
+
+    document.getElementById('timerFinishLogBtn').addEventListener('click', completeAndLogTimer);
+
+    // ---------- REMINDERS & SOUND MODAL ----------
+    document.getElementById('remindersBtn').addEventListener('click', () => {
+      document.getElementById('soundEnabledCheckbox').checked = Boolean(appState.soundEnabled);
+      document.getElementById('reminderEnabledCheckbox').checked = Boolean(appState.reminderEnabled);
+      document.getElementById('reminderTimeInput').value = appState.reminderTime || '20:00';
+      document.getElementById('remindersModal').classList.remove('hidden');
+    });
+    document.getElementById('closeRemindersModalBtn').addEventListener('click', () => document.getElementById('remindersModal').classList.add('hidden'));
+    document.getElementById('testChimeBtn').addEventListener('click', playChime);
+    document.getElementById('saveRemindersBtn').addEventListener('click', () => {
+      appState.soundEnabled = document.getElementById('soundEnabledCheckbox').checked;
+      appState.reminderEnabled = document.getElementById('reminderEnabledCheckbox').checked;
+      appState.reminderTime = document.getElementById('reminderTimeInput').value || '20:00';
+      if (appState.reminderEnabled && 'Notification' in window && Notification.permission === 'default') {
+        try { Notification.requestPermission().catch(() => {}); } catch (e) {}
+      }
+      saveState();
+      renderAll();
+      document.getElementById('remindersModal').classList.add('hidden');
+      showToast('Reminder & sound settings saved');
+    });
+
+    setInterval(() => {
+      if (!appState.reminderEnabled) return;
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const tStr = todayStr();
+      if (hhmm === appState.reminderTime && appState.lastRemindedDate !== tStr) {
+        appState.lastRemindedDate = tStr;
+        if (appState.soundEnabled) playChime();
+        showToast('Daily Cadence reminder: time to log your habits!');
+        try {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Cadence Habit Reminder', { body: 'Time for your daily habit & goal check-in!' });
+          }
+        } catch (e) {}
+      }
+    }, 30000);
+
+    // ---------- INIT ----------
+    loadState();
+    renderAll();
+  </script>
+</body>
+</html>
