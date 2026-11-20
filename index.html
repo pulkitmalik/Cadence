@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadence — Personal & Shared Habit &amp; Goal Tracker</title>
+  <title>Cadence — Personal &amp; Shared Habit &amp; Goal Tracker</title>
+  <meta name="theme-color" content="#059669" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -30,8 +35,8 @@
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 antialiased">
 
   <!-- Top Navigation Bar -->
-  <header class="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+  <header class="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-0 sm:h-16 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
       <!-- Brand -->
       <div class="flex items-center gap-2.5 shrink-0">
         <div class="w-9 h-9 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shadow-sm">
@@ -43,8 +48,8 @@
         </div>
       </div>
 
-      <!-- Profile Switcher & Compare Pill -->
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+      <!-- Profile Switcher & Compare Pill (moves to full-width 2nd row on small phones) -->
+      <div class="order-3 sm:order-2 w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 overflow-x-auto no-scrollbar pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
           <i data-lucide="users" class="w-4 h-4 text-slate-500 dark:text-slate-400 ml-2 shrink-0"></i>
           <select id="profileSelect" aria-label="Active Profile" class="bg-transparent text-xs sm:text-sm font-medium pr-2 py-1 focus:outline-none cursor-pointer text-slate-800 dark:text-slate-100"></select>
@@ -60,7 +65,7 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <div class="order-2 sm:order-3 flex items-center gap-1.5 sm:gap-2 shrink-0">
         <button id="importBtn" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors">
           <i data-lucide="upload" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
           <span class="hidden md:inline">Import</span>
@@ -94,7 +99,7 @@
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
     <!-- Imported Profile Banner (shown when viewing someone else's profile) -->
     <div id="importedBanner" class="hidden rounded-2xl border border-indigo-200 dark:border-indigo-800/70 bg-indigo-50/70 dark:bg-indigo-950/40 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -1019,28 +1024,42 @@
           }
 
           return `
-            <div class="rounded-xl border p-3.5 transition-all ${done
+            <div class="rounded-xl border p-3.5 sm:p-4 transition-all ${done
               ? 'border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/15'
               : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}">
-              <div class="flex items-center justify-between gap-3">
-                <div class="min-w-0 flex-1">
-                  <div class="flex flex-wrap items-center gap-2">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-start justify-between gap-2 min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                     <span class="font-semibold text-sm ${done ? 'text-emerald-900 dark:text-emerald-200' : ''}">${escapeHtml(h.name)}</span>
                     <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${catStyle.badge}">${escapeHtml(h.category)}</span>
                     ${streak > 0 ? `<span class="inline-flex items-center gap-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400"><i data-lucide="flame" class="w-3 h-3"></i>${streak}d</span>` : ''}
                   </div>
+                  <div class="flex sm:hidden items-center gap-1 shrink-0">
+                    <button data-timer-habit="${escapeHtml(h.id)}" title="Start Focus Timer" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+                      <i data-lucide="timer" class="w-4 h-4"></i>
+                    </button>
+                    <button data-edit-habit="${escapeHtml(h.id)}" title="Edit habit" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                      <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </button>
+                    <button data-archive-habit="${escapeHtml(h.id)}" title="Archive habit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600">
+                      <i data-archive-icon class="w-4 h-4 hidden"></i><i data-lucide="archive" class="w-4 h-4"></i>
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
+                  <span class="text-xs text-slate-400 sm:hidden">${h.type === 'boolean' ? 'Status' : 'Progress'}</span>
                   ${controlHtml}
-                  <button data-timer-habit="${escapeHtml(h.id)}" title="Start Focus Timer" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i data-lucide="timer" class="w-3.5 h-3.5"></i>
-                  </button>
-                  <button data-edit-habit="${escapeHtml(h.id)}" title="Edit habit" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                  </button>
-                  <button data-archive-habit="${escapeHtml(h.id)}" title="Archive habit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i data-lucide="archive" class="w-3.5 h-3.5"></i>
-                  </button>
+                  <div class="hidden sm:flex items-center gap-1">
+                    <button data-timer-habit="${escapeHtml(h.id)}" title="Start Focus Timer" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                      <i data-lucide="timer" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button data-edit-habit="${escapeHtml(h.id)}" title="Edit habit" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                      <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button data-archive-habit="${escapeHtml(h.id)}" title="Archive habit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+                      <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
               ${progressBarHtml}
@@ -1080,7 +1099,7 @@
         document.getElementById('calPeriodLabel').textContent = `${startFmt} – ${endFmt}`;
 
         const activeHabits = profile.habits.filter(h => !h.archived);
-        let html = `<div class="grid grid-cols-8 gap-1.5 text-[11px] font-medium text-slate-400 mb-2 items-center">
+        let html = `<div class="overflow-x-auto no-scrollbar"><div class="min-w-[330px]"><div class="grid grid-cols-[92px_repeat(7,minmax(0,1fr))] gap-1.5 text-[11px] font-medium text-slate-400 mb-2 items-center">
           <div>Habit</div>`;
         days.forEach(ds => {
           const dObj = parseDateStr(ds);
@@ -1094,7 +1113,7 @@
         html += `</div><div class="space-y-1.5">`;
 
         activeHabits.forEach(h => {
-          html += `<div class="grid grid-cols-8 gap-1.5 items-center">
+          html += `<div class="grid grid-cols-[92px_repeat(7,minmax(0,1fr))] gap-1.5 items-center">
             <div class="text-xs truncate pr-1 text-slate-600 dark:text-slate-300" title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</div>`;
           days.forEach(ds => {
             const val = profile.logs[ds]?.values?.[h.id];
@@ -1111,7 +1130,7 @@
           });
           html += `</div>`;
         });
-        html += `</div>`;
+        html += `</div></div></div>`;
         container.innerHTML = html;
       } else {
         // Monthly Calendar Grid
@@ -2363,6 +2382,13 @@
     // ---------- INIT ----------
     loadState();
     renderAll();
+
+    // Register Service Worker for PWA installability & offline use (safe no-op in preview)
+    try {
+      if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    } catch (e) {}
   </script>
 </body>
 </html>
